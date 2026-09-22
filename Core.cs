@@ -8,7 +8,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(Fisher781.Core), "Fisher781", "0.2.0", "Fisher781")]
+[assembly: MelonInfo(typeof(Fisher781.Core), "Fisher781", "0.2.1", "Fisher781")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace Fisher781
@@ -61,7 +61,7 @@ namespace Fisher781
             EnsureStyles();
 
             GUI.depth = -5000;
-            _window = GUI.Window(781781, _window, DrawWindow, GUIContent.none, _box);
+            _window = GUI.Window(781781, _window, (GUI.WindowFunction)DrawWindow, "", _box);
         }
 
         private void DrawWindow(int id)
@@ -779,7 +779,7 @@ namespace Fisher781
                 yield break;
             }
 
-            object countObj = Get(collection, "Count") ?? Get(collection, "Length");
+            object countObj = Get(collection, "Count");
             if (countObj == null) yield break;
             int count = Convert.ToInt32(countObj);
 
@@ -794,40 +794,15 @@ namespace Fisher781
             }
         }
 
-        private static object ToIl2CppType(Type wrapperType)
-        {
-            if (wrapperType == null) return null;
-            try
-            {
-                Type helper = Type.GetType("Il2CppInterop.Runtime.Il2CppType, Il2CppInterop.Runtime", false);
-                if (helper == null) return null;
-
-                MethodInfo of = helper.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .FirstOrDefault(m => m.Name == "Of" && m.IsGenericMethodDefinition && m.GetParameters().Length == 0);
-                if (of == null) return null;
-
-                return of.MakeGenericMethod(wrapperType).Invoke(null, null);
-            }
-            catch { return null; }
-        }
-
         public static IEnumerable<object> FindAll(Type t)
         {
             if (t == null) yield break;
 
-            object ilType = ToIl2CppType(t);
-            if (ilType == null) yield break;
+            UnityEngine.Object[] arr = null;
+            try { arr = Resources.FindObjectsOfTypeAll(t); } catch { }
+            if (arr == null) yield break;
 
-            object arr = null;
-            try
-            {
-                MethodInfo find = typeof(Resources).GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .FirstOrDefault(m => m.Name == "FindObjectsOfTypeAll" && !m.IsGenericMethod && m.GetParameters().Length == 1);
-                if (find != null) arr = find.Invoke(null, new[] { ilType });
-            }
-            catch { }
-
-            foreach (object o in Each(arr))
+            foreach (UnityEngine.Object o in arr)
                 if (o != null) yield return o;
         }
 
