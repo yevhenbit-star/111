@@ -1,0 +1,61 @@
+name: Build Fisher781 DLL
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "Core.cs"
+      - "Fisher781.csproj"
+      - ".github/workflows/build.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "6.0.x"
+
+      - name: Download Schedule I / MelonLoader reference DLLs
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/deps"
+          curl -L --fail --retry 3 \
+            "https://github.com/hdlmrell/S1-MeshVault/releases/download/deps/deps.tar.gz" \
+            -o "$RUNNER_TEMP/deps.tar.gz"
+          tar -xzf "$RUNNER_TEMP/deps.tar.gz" -C "$GITHUB_WORKSPACE/deps"
+          test -f "$GITHUB_WORKSPACE/deps/melonloader/net6/MelonLoader.dll"
+          test -f "$GITHUB_WORKSPACE/deps/il2cpp/UnityEngine.CoreModule.dll"
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          dotnet build Fisher781.csproj \
+            -c Release \
+            -p:DepsRoot="$GITHUB_WORKSPACE/deps"
+
+      - name: Prepare DLL
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p artifact
+          cp bin/Release/net6.0/Fisher781.dll artifact/Fisher781.dll
+          ls -lh artifact/Fisher781.dll
+
+      - name: Upload Fisher781.dll
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fisher781-DLL
+          path: artifact/Fisher781.dll
+          if-no-files-found: error
+          retention-days: 30
