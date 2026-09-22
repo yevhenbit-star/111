@@ -1,4 +1,5 @@
 using MelonLoader;
+using Il2CppInterop.Runtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(Fisher781.Core), "Fisher781", "0.2.1", "Fisher781")]
+[assembly: MelonInfo(typeof(Fisher781.Core), "Fisher781", "0.2.2", "Fisher781")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace Fisher781
@@ -798,11 +799,14 @@ namespace Fisher781
         {
             if (t == null) yield break;
 
-            UnityEngine.Object[] arr = null;
-            try { arr = Resources.FindObjectsOfTypeAll(t); } catch { }
+            Il2CppSystem.Type il2cppType = null;
+            try { il2cppType = Il2CppType.From(t); } catch { }
+            if (il2cppType == null) yield break;
+
+            var arr = Resources.FindObjectsOfTypeAll(il2cppType);
             if (arr == null) yield break;
 
-            foreach (UnityEngine.Object o in arr)
+            foreach (var o in arr)
                 if (o != null) yield return o;
         }
 
